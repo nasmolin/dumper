@@ -1,9 +1,7 @@
 #!/bin/bash
 
-
 # vars:
-discord_webhook_url=''
-
+discord_webhook_url='URL'
 declare -A levels=([DEBUG]=0 [INFO]=1 [WARN]=2 [ERROR]=3)
 script_logging_level="DEBUG"
 host_name=$(cat /etc/hosts | grep 127.0.1.1 |awk '{print $2}')
@@ -14,7 +12,6 @@ logfile=$workdir/logs/pg_dumper.log
 dumpsdir=$workdir/dumps
 dumpfile=$workdir/dumps/$script_start_timestamp.dump
 logrotateonfig=/etc/logrotate.d/pg_dumper.conf
-
 
 # func:
 logThis() {
@@ -55,19 +52,25 @@ function check_exec {
         fi
 }
 
-echo -e "Script initiated"
-if ! [[ -f ${logfile} ]]; then
-        echo -e "[INFO] Creating log file: (${logfile})."
-        echo -e "stdout and stderr will be redirected to this file."
-        logThis "Log file created." "INFO"
-fi
-
-
 # Script:
+echo -e "Script initiated"
+
 if ! [[ $(whoami) == root ]]; then 
          echo -e "[ERROR] Permission Denied, are you root?"
          exit 1
 fi
+
+if ! [[ -f ${logfile} ]]; then
+        echo -e "[INFO] Creating log file: (${logfile})."
+        echo -e "stdout and stderr will be redirected to this file."
+        echo -e "Trying to create logs dir." 
+        mkdir -p $logsdir
+        echo -e "Log file was created." && logThis "Log file was created." "DEBUG"
+fi
+
+echo -e "Trying to create dir for .dump files." && logThis "Trying to create dir for .dump files." "INFO"
+mkdir -p $dumpsdir >> $logfile 2>> $logfile && check_exec
+
 rm $logrotateonfig
 logThis "Creating logrotate config." "DEBUG"
 cat >${logrotateonfig} <<-EOF
@@ -79,19 +82,18 @@ cat >${logrotateonfig} <<-EOF
         }
 EOF
 
-logThis "Apply logrotate config." "DEBUG"
+echo -e "Apply logrotate config." && logThis "Apply logrotate config." "DEBUG"
 logrotate ${logrotateonfig} >> $logfile 2>> $logfile && check_exec
-logThis "Trying to create logs dirs." "INFO"
-mkdir -p $logsdir >> $logfile 2>> $logfile && check_exec
-logThis "Trying to create dir for .dump files." "INFO"
-mkdir -p $dumpsdir >> $logfile 2>> $logfile && check_exec
-logThis "Trying to create empty .dump file." "INFO"
+
+echo -e "Trying to create empty .dump file." && logThis "Trying to create empty .dump file." "INFO"
 touch $dumpfile >> $logfile 2>> $logfile && check_exec
-logThis "Trying to change permissions." "INFO"
+
+echo -e "Trying to change permissions." && logThis "Trying to change permissions." "INFO"
 chown postgres:postgres $dumpfile >> $logfile 2>> $logfile && check_exec
-logThis "Trying to create dump." "DEBUG"
-logThis "Dump will be saved in ${dumpfile}." "DEBUG"
+
+echo -e "Trying to create dump." && logThis "Trying to create dump." "DEBUG"
+echo -e "Dump will be saved in ${dumpfile}." && logThis "Dump will be saved in ${dumpfile}." "DEBUG"
 sudo -u postgres pg_dumpall -f $dumpfile >> $logfile 2>>$logfile && check_exec
-logThis "Script exit with code 0." "INFO."
-echo -e "[SUCCESS] script exit with code 0."
+
+echo -e "[SUCCESS] script exit with code 0." && logThis "Script exit with code 0." "INFO."
 exit 0
