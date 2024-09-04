@@ -1,7 +1,9 @@
-########################################################
+#!/bin/bash
+
+
 # vars:
 discord_webhook_url=''
-########################################################
+
 declare -A levels=([DEBUG]=0 [INFO]=1 [WARN]=2 [ERROR]=3)
 script_logging_level="DEBUG"
 host_name=$(cat /etc/hosts | grep 127.0.1.1 |awk '{print $2}')
@@ -13,9 +15,8 @@ dumpsdir=$workdir/dumps
 dumpfile=$workdir/dumps/$script_start_timestamp.dump
 logrotateonfig=/etc/logrotate.d/pg_dumper.conf
 
-########################################################
+
 # func:
-########################################################
 logThis() {
         local log_message=$1
         local log_priority=$2
@@ -61,9 +62,8 @@ if ! [[ -f ${logfile} ]]; then
         logThis "Log file created." "INFO"
 fi
 
-########################################################
+
 # Script:
-########################################################
 if ! [[ $(whoami) == root ]]; then 
          echo -e "[ERROR] Permission Denied, are you root?"
          exit 1
